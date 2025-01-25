@@ -15,11 +15,14 @@ CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
 LETTERS = int(os.getenv('LETTERS'))
 ADMIN = [int(uid) for uid in os.getenv('ADMIN').split(',')]
 
-# Inicializar el cliente de Telethon basado en LOG_TYPE
+# Asegurarse de tener permisos y directorio adecuado para la sesión
+session_directory = './sessions'
+os.makedirs(session_directory, exist_ok=True)
 if LOG_TYPE == 'TOKEN':
     client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=LOG)
 elif LOG_TYPE == 'SS':
-    client = TelegramClient(LOG, API_ID, API_HASH)
+    session_path = os.path.join(session_directory, LOG)
+    client = TelegramClient(session_path, API_ID, API_HASH)
 
 # Función para generar una palabra random
 def generate_random_word(length):
