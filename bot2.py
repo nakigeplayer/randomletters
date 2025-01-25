@@ -1,7 +1,7 @@
 import os
+import hashlib
 import asyncio
 import random
-import hashlib
 import datetime
 from pyrogram import Client, filters
 from PIL import Image, ImageDraw, ImageFont
@@ -123,13 +123,13 @@ async def create_image_command(client, message):
     else:
         await message.reply_text('No tienes permisos para usar este comando.')
 
-# Iniciar tareas del bot
 async def main():
     try:
         await client.start()
         print('Bot conectado y listo.')  # Depuración
         asyncio.create_task(send_scheduled_messages())
-        await client.idle()
+        # Uso de un bucle de eventos para mantener el bot en ejecución
+        await asyncio.Event().wait()
     except Exception as e:
         print(f'Error starting the bot: {e}')
 
