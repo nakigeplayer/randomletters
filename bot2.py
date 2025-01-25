@@ -15,13 +15,15 @@ CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
 LETTERS = int(os.getenv('LETTERS'))
 ADMIN = [int(uid) for uid in os.getenv('ADMIN').split(',')]
 
-# Asegurarse de tener permisos y directorio adecuado para la sesión
+# Crear el directorio de sesiones si no existe
 session_directory = './sessions'
 os.makedirs(session_directory, exist_ok=True)
+
 if LOG_TYPE == 'TOKEN':
     client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=LOG)
 elif LOG_TYPE == 'SS':
     session_path = os.path.join(session_directory, LOG)
+    open(session_path, 'a').close()  # Crear el archivo si no existe
     client = TelegramClient(session_path, API_ID, API_HASH)
 
 # Función para generar una palabra random
@@ -34,32 +36,27 @@ def generate_hex_color():
 
 # Función para crear la imagen según las especificaciones
 def create_image(text):
-    width, height = 800, 400  # Dimensiones de la imagen
+    width, height = 800, 400
     background_color = generate_hex_color()
     font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # Fuente predeterminada de Pillow
     font_size = 72
 
-    # Crear imagen con fondo de color random
     image = Image.new('RGB', (width, height), color=background_color)
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype(font_path, font_size)
-    
-    # Obtener tamaño del texto y calcular posición
-    text = text.upper()  # Convertir texto a mayúsculas
+
+    text = text.upper()
     text_width, text_height = draw.textsize(text, font=font)
     position = ((width - text_width) // 2, (height - text_height) // 2)
 
-    # Dibujar borde blanco
     border_width = 2
-    for angle in range(0, 360, 45):  # Relleno del borde en todas las direcciones
+    for angle in range(0, 360, 45):
         offset_x = border_width * math.cos(math.radians(angle))
         offset_y = border_width * math.sin(math.radians(angle))
         draw.text((position[0] + offset_x, position[1] + offset_y), text, font=font, fill="white")
 
-    # Dibujar el texto en negro
     draw.text(position, text, font=font, fill="black")
 
-    # Guardar o mostrar la imagen
     image.save('output_image.png')
     image.show()
     return 'output_image.png'
