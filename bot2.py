@@ -1,8 +1,8 @@
 import os
 import asyncio
 import random
-import datetime
 import hashlib
+import datetime
 from pyrogram import Client, filters
 from PIL import Image, ImageDraw, ImageFont
 
@@ -19,15 +19,12 @@ CHANNEL_ID = int(os.getenv('CHANNEL_ID'))
 LETTERS = int(os.getenv('LETTERS'))
 ADMIN = [int(uid) for uid in os.getenv('ADMIN').split(',')]
 
-# Crear el directorio de sesiones si no existe
-session_directory = './sessions'
-os.makedirs(session_directory, exist_ok=True)
-
+# Configuración del cliente de Pyrogram
 if LOG_TYPE == 'TOKEN':
-    bot = Client("bot", api_id=API_ID, api_hash=API_HASH, bot_token=LOG)
+    client = Client(f"bot_{LOG}", api_id=API_ID, api_hash=API_HASH, bot_token=LOG)
 elif LOG_TYPE == 'SS':
     session_name = get_hashed_session_name(LOG)
-    bot = Client(session_name, api_id=API_ID, api_hash=API_HASH)
+    client = Client(session_name, api_id=API_ID, api_hash=API_HASH)
 
 # Función para generar una palabra random
 def generate_random_word(length):
@@ -64,6 +61,7 @@ def create_image(text):
     image.show()
     return 'output_image.png'
 
+# Enviar mensajes cada 10 minutos en minutos exactos (00, 10, 20, 30, 40, 50)
 async def send_scheduled_messages():
     while True:
         current_time = datetime.datetime.now().time()
@@ -72,22 +70,22 @@ async def send_scheduled_messages():
         await asyncio.sleep(next_send_time * 60)
         word = generate_random_word(LETTERS)
         try:
-            await bot.send_message(CHANNEL_ID, word)
+            await client.send_message(CHANNEL_ID, word)
             print(f'Successfully sent message to {CHANNEL_ID}.')
         except Exception as e:
             print(f'Error sending message to {CHANNEL_ID}: {e}')
         await asyncio.sleep(10 * 60)
 
-@bot.on_message(filters.command("start") & filters.private)
-async def start(bot, message):
+@client.on_message(filters.command("start") & filters.private)
+async def start(client, message):
     try:
         print('/start received')  # Depuración
-        await message.reply_text("Bot activado. Puedes empezar a recibir mensajes.")
+        await message.reply_text('Bot activado. Puedes empezar a recibir mensajes.')
     except Exception as e:
         print(f'Error responding to /start: {e}')
 
-@bot.on_message(filters.command("gen") & filters.private)
-async def generate_words(bot, message):
+@client.on_message(filters.command("gen") & filters.private)
+async def generate_words(client, message):
     try:
         print('/gen received')  # Depuración
         words = [generate_random_word(LETTERS) for _ in range(4)]
@@ -95,15 +93,15 @@ async def generate_words(bot, message):
     except Exception as e:
         print(f'Error responding to /gen: {e}')
 
-@bot.on_message(filters.command("sendto") & filters.private)
-async def send_to_chat(bot, message):
+@client.on_message(filters.command("sendto") & filters.private)
+async def send_to_chat(client, message):
     if message.from_user.id in ADMIN:
         try:
             command, chat_id = message.text.split()
             chat_id = int(chat_id)
             word = generate_random_word(LETTERS)
             print(f'Enviando palabra al chat {chat_id}: {word}')  # Depuración
-            await bot.send_message(chat_id, word)
+            await client.send_message(chat_id, word)
             await message.reply_text('Mensaje enviado.')
         except ValueError:
             await message.reply_text('Uso incorrecto: /sendto ChatID')
@@ -112,27 +110,27 @@ async def send_to_chat(bot, message):
     else:
         await message.reply_text('No tienes permisos para usar este comando.')
 
-@bot.on_message(filters.command("create") & filters.private)
-async def create_image_command(bot, message):
+@client.on_message(filters.command("create") & filters.private)
+async def create_image_command(client, message):
     if message.from_user.id in ADMIN:
         try:
             text = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else "HELLO"
             image_path = create_image(text)
             print(f'Enviando imagen al chat {message.chat.id}')  # Depuración
-            await bot.send_photo(message.chat.id, image_path)
+            await client.send_photo(message.chat.id, image_path)
         except Exception as e:
             print(f'Error creating or sending the image: {e}')
     else:
         await message.reply_text('No tienes permisos para usar este comando.')
 
+# Iniciar tareas del bot
 async def main():
     try:
-        await bot.start()
+        await client.start()
         print('Bot conectado y listo.')  # Depuración
         asyncio.create_task(send_scheduled_messages())
-        await bot.idle()
+        await client.idle()
     except Exception as e:
         print(f'Error starting the bot: {e}')
 
-if __name__ == '__main__':
-    asyncio.run(main())
+client.run(main())
