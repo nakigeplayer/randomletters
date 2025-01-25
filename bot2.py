@@ -2,9 +2,13 @@ import os
 import asyncio
 import random
 import datetime
-import math
+import hashlib
 from telethon import TelegramClient, events
 from PIL import Image, ImageDraw, ImageFont
+
+# Función para generar un nombre de archivo de sesión a partir del hash
+def get_hashed_session_name(session_name):
+    return hashlib.sha256(session_name.encode()).hexdigest()
 
 # Obtener variables de entorno
 LOG_TYPE = os.getenv('LOG_TYPE')
@@ -22,7 +26,7 @@ os.makedirs(session_directory, exist_ok=True)
 if LOG_TYPE == 'TOKEN':
     client = TelegramClient('bot', API_ID, API_HASH).start(bot_token=LOG)
 elif LOG_TYPE == 'SS':
-    session_path = os.path.join(session_directory, LOG)
+    session_path = os.path.join(session_directory, get_hashed_session_name(LOG))
     open(session_path, 'a').close()  # Crear el archivo si no existe
     client = TelegramClient(session_path, API_ID, API_HASH)
 
